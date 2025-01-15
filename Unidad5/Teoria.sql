@@ -73,4 +73,47 @@ INNER JOIN Elementos E ON H.IdTipo = E.Id
 INNER JOIN Pokemons P ON PH.IdPokemon = P.Id
 WHERE PH.IdPokemon <= 20
 GROUP BY H.Nombre
-HAVING COUNT(P.Id) = 1
+HAVING COUNT(P.Id) > 4
+
+-- FUNCIONES INTEGRADAS:
+-- Agregado: MAX MIN SUM..
+-- String: LEFT LOWER SUBSTRING NCHAR..
+-- Fecha y Hora: DATE DATEDIFF YEAR MONTH..
+
+SELECT Nombre, ISNULL(IdEvolucion,0) IdEvolucion FROM Pokemons -- Si el id es nulo muestra un 0
+
+--							IdTipo	  1			2		3
+SELECT Id, Nombre, CHOOSE(IdTipo, 'Planta', 'Fuego', 'Agua') Tipo
+FROM Habilidades WHERE CHOOSE(IdTipo, 'Planta', 'Fuego', 'Agua') IS NOT NULL
+ORDER BY Tipo
+
+
+-- Crea un código concatenando 
+-- a) Substring de nombre (comenzando del 1 y con longitud de 3 caracteres)
+-- b) Número
+-- c) y Peso
+SELECT Nombre, CONCAT(SUBSTRING(Nombre, 1, 3), Numero, Peso) AS Codigo FROM Pokemons
+
+
+-- Cálculo de edad
+-- YEAR: le pedimos que nos devuelva en años 
+-- la diferencia entre la fecha de hoy y la fecha de nacimiento pasadas por parámetro
+SELECT Nombre, FechaNacimiento,
+DATEDIFF(YEAR, FechaNacimiento, GETDATE()) AS Edad,
+GETDATE() AS 'Fecha Actual'
+FROM Entrenadores
+
+-- Cálculo de edad teniendo en cuenta meses y días
+SELECT 
+    Nombre, 
+    FechaNacimiento,
+    CASE -- Si el mes de nacimiento es menor que el mes actual,
+        WHEN MONTH(FechaNacimiento) < MONTH(GETDATE()) 
+			-- o si es igual pero el día del mes ya pasó, se usa la diferencia directa
+            OR (MONTH(FechaNacimiento) = MONTH(GETDATE()) AND DAY(FechaNacimiento) <= DAY(GETDATE())) THEN
+            DATEDIFF(YEAR, FechaNacimiento, GETDATE())
+        ELSE -- Si no, se resta 1 porque el cumpleaños aún no ocurrió en este año.
+            DATEDIFF(YEAR, FechaNacimiento, GETDATE()) - 1
+    END AS Edad,
+    GETDATE() AS 'Fecha Actual'
+FROM Entrenadores;
