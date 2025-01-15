@@ -36,4 +36,41 @@ WHERE PH.IdPokemon <= 20
 --ORDER By Tipo Desc
 
 
--- ORDER BY
+-- ORDER BY: Cláusula que ordena filas del listado (por defecto es ascendente); asc; desc; 
+-- Se usa para ordenar los resultados de una consulta SQL en base a una o más columnas
+SELECT P.Id, P.Nombre, E.Descripcion AS Tipo FROM Pokemons P
+INNER JOIN [Pokemons.Tipos] PT ON P.Id = PT.IdPokemon
+INNER JOIN Elementos E ON PT.IdElemento = E.Id
+ORDER BY Nombre, Tipo
+
+
+-- GROUP BY Cláusla para agrupar datos (SUM(), COUNT(), AVG(), MAX(), MIN(), etc).
+-- Agrupa los registros que tienen valores similares en columnas específicas
+Select H.Nombre AS Habilidad, COUNT(H.Id) 'Cantidad Pokemons'
+From Habilidades H
+INNER JOIN [Pokemons.Habilidades] PH ON H.Id = PH.IdHabilidad
+INNER JOIN Elementos E ON H.IdTipo = E.Id
+WHERE PH.IdPokemon <= 20
+GROUP BY H.Nombre
+
+
+Select P.Nombre, E.Descripcion AS Tipo, COUNT(H.Id) AS 'Habilidades posibles'
+From Pokemons P
+INNER JOIN [Pokemons.Tipos] PT ON P.Id = PT.IdPokemon
+INNER JOIN Elementos E ON PT.IdElemento = E.Id
+INNER JOIN Habilidades H ON H.IdTipo = E.Id
+GROUP BY P.Nombre, E.Descripcion
+ORDER BY 'Habilidades posibles' Desc
+
+-- HAVING: Filtra grupos creados por GROUP BY según una condición, 
+-- similar a WHERE pero aplicado a resultados agregados (CALCULADOS SUM, COUNT, AVG).
+-- Se escribe después del group by
+
+Select H.Nombre AS Habilidad, COUNT(P.Id) 'Cantidad Pokemons'
+From Habilidades H
+INNER JOIN [Pokemons.Habilidades] PH ON H.Id = PH.IdHabilidad
+INNER JOIN Elementos E ON H.IdTipo = E.Id
+INNER JOIN Pokemons P ON PH.IdPokemon = P.Id
+WHERE PH.IdPokemon <= 20
+GROUP BY H.Nombre
+HAVING COUNT(P.Id) = 1
