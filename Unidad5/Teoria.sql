@@ -117,3 +117,51 @@ SELECT
     END AS Edad,
     GETDATE() AS 'Fecha Actual'
 FROM Entrenadores;
+
+
+-- SUBCONSULTAS CON SELECT: Pueden estar a nivel columna, a nivel where
+
+-- Habilidades que están presentes en pokemons con id < 20
+SELECT Id, Nombre,
+(SELECT Descripcion FROM Elementos E WHERE E.Id = H.IdTipo) AS Tipo
+FROM HABILIDADES H 
+	WHERE H.Id IN (SELECT IdHabilidad FROM [Pokemons.Habilidades] WHERE IdPokemon <= 20)
+ORDER BY Tipo DESC
+
+
+-- Que tipos de pokemons tienen los entrenadores
+SELECT E.Nombre FROM Entrenadores E WHERE E.Id IN
+	(SELECT IdEntrenador FROM [Entrenadores.Pokemons] WHERE IdPokemon IN
+		(SELECT IdPokemon FROM [Pokemons.Tipos] WHERE IdElemento IN
+			(SELECT Id FROM Elementos WHERE Descripcion LIKE 'Planta')
+		)
+	)
+
+
+-- Todos los pokemons que tienen asociado algún entrenador
+SELECT * FROM Pokemons WHERE Id IN
+	(SELECT IdPokemon FROM [Entrenadores.Pokemons])
+
+
+
+-- SUBCONSULTAS CON DELETE UPDATE E INSERT: 
+
+DELETE FROM Entrenadores WHERE Id IN (
+	SELECT Id FROM Entrenadores WHERE Apellido LIKE '' AND YEAR(FechaNacimiento) >= 1990)
+
+
+-- La subconsulta cumple la funcion de un VALUES
+
+INSERT INTO Entrenadores (Id, Nombre, Apellido, NickName, Email, Clave, FechaNacimiento)
+--> Migracion de otra base de datos
+SELECT (SELECT MAX(ID) FROM Entrenadores)+Id AS Id, -- (Al ID max alto de Entrenadores le suma el Id de Reparto, MAX+1..MAX+n.. 13+1, 13+2..)
+--SELECT (SELECT MAX(ID)+1 FROM Entrenadores) AS Id, -- Para insertar uno solo
+Nombre,
+Apellido, 
+Nombre AS NickName,
+CONCAT(Nombre, Apellido, '@bomba.gmail.com') AS Email,
+CONCAT(Nombre, '123xyz') AS Clave,
+FechaNacimiento
+FROM MaxiFlix_DB.dbo.Reparto WHERE Id != 1 -- Para insertar todos
+--FROM MaxiFlix_DB.dbo.Reparto WHERE Id = 1 -- Para insertar uno solo
+
