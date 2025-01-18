@@ -165,3 +165,67 @@ FechaNacimiento
 FROM MaxiFlix_DB.dbo.Reparto WHERE Id != 1 -- Para insertar todos
 --FROM MaxiFlix_DB.dbo.Reparto WHERE Id = 1 -- Para insertar uno solo
 
+
+
+
+-- VISTAS: Consultas empaquetadas, predefinidas que devuelven un set de datos.
+-- Se pueden joinear con tablas, agregarle clausulas (where, order by, etc)
+
+-- * SELECT
+
+-- 1)
+CREATE OR ALTER VIEW vElementos AS
+SELECT Id, Descripcion FROM Elementos
+
+--Para llamar
+SELECT * FROM vElementos
+
+-- 2)
+CREATE OR ALTER VIEW vHabilidadesDisponiblesPokemonsMenor20 AS
+Select DISTINCT H.Id, 
+H.Nombre,
+CASE WHEN E.Descripcion = 'Planta' THEN N'🌿 Planta'
+WHEN E.Descripcion = 'Agua' THEN N'💧 Agua' 
+WHEN E.Descripcion = 'Volador' THEN N'🪽 Volador'
+WHEN E.Descripcion = 'Veneno' THEN N'☢️ Veneno' 
+ELSE E.Descripcion END AS Tipo
+From Habilidades H
+INNER JOIN [Pokemons.Habilidades] PH ON H.Id = PH.IdHabilidad
+INNER JOIN Elementos E ON H.IdTipo = E.Id
+WHERE PH.IdPokemon <= 20
+
+--
+SELECT * FROM vHabilidadesDisponiblesPokemonsMenor20
+ORDER BY Tipo DESC
+
+
+
+-- 3) POKEMONS CON TIPO Y DEBILIDAD
+CREATE OR ALTER VIEW vPokemonsTipoDebilidad AS
+SELECT Id, Nombre, Numero,
+	(SELECT TOP 1 E.Descripcion
+	FROM Elementos E INNER JOIN [Pokemons.Tipos] PT
+	ON PT.IdElemento = E.Id WHERE PT.IdPokemon = P.Id) AS Tipo,
+	(SELECT TOP 1 E.Descripcion
+	FROM Elementos E INNER JOIN [Pokemons.Debilidades] PD
+	ON PD.IdElemento = E.Id WHERE PD.IdPokemon = P.Id) AS Debilidad
+FROM Pokemons P
+
+-- Listado anterior más el nombre de su entrenador
+CREATE OR ALTER VIEW vEntrenadoresPokemons AS
+SELECT E.Id IdEntrenador, E.Nombre NombreEntrenador, VP.* FROM vPokemonsTipoDebilidad VP
+	INNER JOIN [Entrenadores.Pokemons] EP ON EP.IdPokemon = VP.Id
+	INNER JOIN Entrenadores E ON EP.IdEntrenador = E.Id
+
+
+-- * VISTAS: para EDITAR DATOS DE LA TABLA a la que estoy apuntando desde la vista
+-- No se recomienda usar Vistas para éstas acciones, se hacen con SP o Triggers
+-- Si tiene funciones agregadas (sum, count) o distinct, o group by no se ejecutan éstas acciones
+
+UPDATE vElementos SET Descripcion = 'Planta 2' WHERE Id = 1
+INSERT INTO vElementos (Id, Descripcion) VALUES (999, 'Ejemplo')
+DELETE FROM vElementos WHERE Id = 999
+
+
+
+-- * PROCEDIMIENTOS ALMACENADOS * --
