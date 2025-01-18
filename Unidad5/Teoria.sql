@@ -229,3 +229,74 @@ DELETE FROM vElementos WHERE Id = 999
 
 
 -- * PROCEDIMIENTOS ALMACENADOS * --
+-- Llevar a cabo acciones SELECT, INSERT, UPDATE, DELETE
+-- Usar cláusulas WHERE, ORDER BY, JOINS, etc.
+-- Se pueden pasar parámetros 
+
+CREATE OR ALTER PROCEDURE spElementoListar(
+	@Id INT
+)
+AS BEGIN
+	SELECT Id, Descripcion FROM Elementos
+	WHERE Id = @Id
+END
+
+-- Llamar al procedimiento
+EXEC spElementoListar 5
+
+-- AGREGAR
+CREATE OR ALTER PROCEDURE spElementosInsert(
+	@Id INT,
+	@Descripcion NVARCHAR(50)
+)
+AS BEGIN
+	INSERT INTO Elementos VALUES(@Id, @Descripcion)
+END
+
+-- ELIMINAR
+CREATE OR ALTER PROCEDURE spElementosEliminar(
+	@Id INT
+)
+AS BEGIN
+	DELETE FROM Elementos WHERE Id = @Id
+END
+
+
+
+-- * IF EN SP - VALIDAR CARDINALIDAD * --
+
+CREATE OR ALTER PROCEDURE spAsociarPokemon(
+	@IdEntrenador INT,
+	@IdPokemon INT,
+	@Nombre VARCHAR(50)
+)
+AS BEGIN
+
+	DECLARE @CantidadPokemon INT; -- Declaramos una variable
+	SELECT @CantidadPokemon = COUNT(IdEntrenador) FROM [Entrenadores.Pokemons] 
+	WHERE IdEntrenador = @IdEntrenador
+
+	-- Verificamos si tiene más de 5 pokemons
+	IF @CantidadPokemon < 5
+	BEGIN
+		-- Verificamos si el id pasado por parámetro existe en el listado de entrenadores
+		IF EXISTS (SELECT Id FROM Entrenadores WHERE Id = @IdEntrenador)	
+		BEGIN 
+			INSERT INTO [Entrenadores.Pokemons]
+			VALUES (@IdEntrenador, @IdPokemon, @Nombre)
+			PRINT ('Pokemon asociado correctamente')
+		END
+		ELSE
+		BEGIN
+			RAISERROR('El Entrenador no existe', 16, 1)
+			RETURN
+		END
+	END
+	ELSE
+	BEGIN
+		RAISERROR('No se pudo procesar. El entrenador tiene más de 5 pokemons asociados', 16, 1)
+	END
+END
+
+--
+EXEC spAsociarPokemon 1, 9, 'Juan'
