@@ -105,7 +105,10 @@ solo vamos a eliminar aquellos que pertenezcan al mundo actoral pero que además
 También queremos dejar afuera a los que tengan un apellido que comience con “S”, no nos gustan…. 👀… 
 en ese caso no importa la fecha de nacimiento.
 Recordá primero consultar los datos para asegurarte de que vas a eliminar lo indicado.*/
+DELETE FROM Entrenadores WHERE Id IN (
+	SELECT Id FROM Entrenadores WHERE Apellido LIKE 'S%' OR YEAR(FechaNacimiento) < 1980 )
 
+SELECT * FROM Entrenadores
 
 
 -- DB MAXI FLIX --
