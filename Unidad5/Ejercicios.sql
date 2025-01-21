@@ -112,33 +112,89 @@ SELECT * FROM Entrenadores
 
 
 -- DB MAXI FLIX --
-
+USE MaxiFlix_DB
 /*1)  Obtener una lista de películas que incluya el título de la película y su duración en minutos. 
 Además, agregar una columna adicional llamada 'ClasificacionDuracion' que clasifique la duración 
 de cada película en tres categorías: 'Corta' si la duración es menor a 90 minutos, 
 'Media' si la duración está entre 90 y 119 minutos, y 'Larga' si la duración es igual o mayor a 120 minutos.*/
+SELECT P.Titulo, P.MinutosDuracion,
+	CASE WHEN P.MinutosDuracion < 90 THEN 'Corta'
+	WHEN P.MinutosDuracion >= 90 AND P.MinutosDuracion <= 119 THEN 'Media'
+	WHEN P.MinutosDuracion > 119 THEN 'Larga'
+	END AS ClasificacionDuracion
+FROM Peliculas P
+
 
 /*2)  Obtener una lista de películas junto con una columna adicional llamada 'Disponibilidad' 
 que indique si la película está disponible en alguna plataforma de streaming. 
 Si la película está disponible en al menos una plataforma, mostrar 'Disponible';
 de lo contrario, mostrar 'No disponible'.*/
 
+SELECT DISTINCT P.Titulo,
+	CASE WHEN PP.IdPlataforma IN (SELECT PP.IdPlataforma FROM [Peliculas.Plataformas] PP
+	WHERE pp.IdPelicula = P.Id) THEN 'Disponible'
+	ELSE 'No Disponible'
+	END AS Disponibilidad, P.Id
+FROM Peliculas P
+INNER JOIN [Peliculas.Plataformas] PP ON P.Id = PP.IdPelicula
+
 -- 3)  Obtener una lista de todas las clasificaciones únicas de las películas disponibles en la plataforma.
 
 -- 4)  Obtener una lista de todas las plataformas únicas disponibles para ver películas.
 
 -- 5)  Obtener la cantidad de Peliculas registradas en cada Plataforma.
+SELECT PL.Nombre AS Plataforma, COUNT(P.Id) AS CantidadPeliculas FROM Plataformas PL
+INNER JOIN [Peliculas.Plataformas] PP ON PL.Id = PP.IdPlataforma
+INNER JOIN Peliculas P ON PP.IdPelicula = P.Id
+GROUP BY PL.Nombre
 
 -- 6)  Obtener las Plataformas que no cuenta con ninguna Película.
+SELECT PL.Nombre AS Plataforma, COUNT(P.Id) AS CantidadPeliculas FROM Plataformas PL
+LEFT JOIN [Peliculas.Plataformas] PP ON PL.Id = PP.IdPlataforma
+LEFT JOIN Peliculas P ON PP.IdPelicula = P.Id
+GROUP BY PL.Nombre
+HAVING COUNT(P.Id) < 1
 
--- 7)  Obtener la cantidad de películas por género, pero solo incluir aquellos géneros que tengan al menos 3 películas asociadas.
+-- 7)  Obtener la cantidad de películas por género, pero solo incluir 
+-- aquellos géneros que tengan al menos 3 películas asociadas.
+SELECT G.Descripcion AS Género, COUNT(P.Id) AS 'Películas por género' FROM Generos G
+INNER JOIN [Peliculas.Generos] PG ON G.Id = PG.IdGenero
+INNER JOIN Peliculas P ON PG.IdPelicula = P.Id
+GROUP BY G.Descripcion
+HAVING COUNT(P.Id) > 3
 
 /* 8)  Obtener el promedio de duración de las películas por clasificación, 
 pero solo incluir aquellas clasificaciones que tengan un promedio de duración mayor o igual a 120 minutos.*/
+SELECT CL.Descripcion AS Clasificacion, AVG(P.MinutosDuracion) AS 'Promedio duración' FROM Clasificaciones CL
+INNER JOIN [Peliculas.Clasificaciones] PC ON CL.Id = PC.IdClasificacion
+INNER JOIN Peliculas P ON PC.IdPelicula = P.Id
+GROUP BY CL.Descripcion
+HAVING AVG(P.MinutosDuracion) >= 120
 
 /*9) Crear una vista llamada 'VistaPeliculasCategorias' que muestre el título de las películas 
 y sus categorías correspondientes.*/
+CREATE OR ALTER VIEW vPeliculasCategorias AS
+SELECT P.Titulo AS Película, C.Descripcion AS Categoria FROM Peliculas P
+INNER JOIN [Peliculas.Clasificaciones] PC ON P.Id = PC.IdPelicula
+INNER JOIN Clasificaciones C ON PC.IdClasificacion = C.Id
 
 /* 10)  Crear un procedimiento almacenado llamado 'ObtenerPeliculasPorCategoria' que tome un parámetro 
 de entrada 'CategoriaId' y devuelva todas las películas que pertenecen a la categoría especificada. 
 El procedimiento debe seleccionar el título, la fecha de estreno y la duración en minutos de cada película.*/
+CREATE OR ALTER PROCEDURE spObtenerPeliculasPorCategoria(
+	@CategoriaId INT
+)
+AS BEGIN
+	IF EXISTS (SELECT Id FROM Categorias WHERE Id = @CategoriaId)
+	BEGIN
+		SELECT DISTINCT P.Titulo AS Pelicula, P.FechaEstreno, P.MinutosDuracion FROM Peliculas P
+		INNER JOIN [Peliculas.Categorias] PC ON P.Id = PC.IdPelicula
+		INNER JOIN Categorias C ON PC.IdCategoria = @CategoriaId
+	END
+	ELSE
+	BEGIN
+		RAISERROR('La categoria ingresada no es válida', 16,1)
+	END
+END
+
+EXEC spObtenerPeliculasPorCategoria 6
