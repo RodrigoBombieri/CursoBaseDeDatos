@@ -137,3 +137,18 @@ END
 
 
 EXEC spAsociarPokemon 1, 2, 'Cachito'
+
+
+-- TRANSACCIONES o T-SQL --
+-- Se utilizan para ejecutar consultas de manera conjunta
+-- El bloque debe cumplir ciertas pautas (ACID):
+	-- ATOMICIDAD: La transacción debe ejecutarse EN SU TOTALIDAD o NO EJECUTARSE EN ABSOLUTO (Todo o nada)
+	-- CONSISTENCIA: Que los datos sean correctos y no se rompan
+	-- AISLAMIENTO: Cuando una consulta está haciendo una acción sobre un elemento, esa tabla será bloqueada
+		-- por la consulta hasta que termine de utilizarla.
+	-- DURABILIDAD: Deben persistir los datos en el tiempo
+
+-- Instrucciones para manipular el bloque de código transaccional:
+	-- BEGIN TRANSACTION: Define el comienzo de la transacción.
+	-- COMMIT TRANSACTION: Para impactar todos los cambios realizados en la transacción.
+	-- ROLLBACK TRANSACTION: Cancelar y retroceder todos los cambios realizados.
