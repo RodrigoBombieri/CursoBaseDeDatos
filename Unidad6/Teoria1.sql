@@ -150,5 +150,57 @@ EXEC spAsociarPokemon 1, 2, 'Cachito'
 
 -- Instrucciones para manipular el bloque de código transaccional:
 	-- BEGIN TRANSACTION: Define el comienzo de la transacción.
+		-- Se realizan las acciones (INSERT, UPDATE, DELETE, etc.)
 	-- COMMIT TRANSACTION: Para impactar todos los cambios realizados en la transacción.
+		-- Hasta que no se confirme mediante COMMIT, los cambios no se verán impactados en la DB.
 	-- ROLLBACK TRANSACTION: Cancelar y retroceder todos los cambios realizados.
+		-- Solicita que los cambios no se impacten en la DB.
+
+
+-- Ejemplo
+-- SP para insertar una habilidad a un pokemon.
+-- TR para validar que sea de alguno de sus tipos
+
+CREATE OR ALTER PROCEDURE spAsociarHabilidad(
+	@IdPokemon INT,
+	@IdHabilidad INT
+)
+AS BEGIN
+BEGIN TRY
+	BEGIN TRANSACTION
+		INSERT INTO [Pokemons.Habilidades]
+		VALUES(@IdPokemon, @IdHabilidad)
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	ROLLBACK TRANSACTION
+	-- mensaje, severidad (valor entre 1 y 25), status (valor entre 1 y 255 que puedo personalizar asignandole un significado)
+	RAISERROR ('Fallo al intentar asociar habilidad', 16, 1)
+END CATCH
+END	
+
+
+CREATE OR ALTER TRIGGER trValidarAsociarHabilidad
+ON [Pokemons.Habilidades]
+AFTER INSERT
+AS BEGIN
+
+IF EXISTS(	SELECT Nombre FROM Habilidades WHERE Id = 
+		(SELECT IdHabilidad FROM inserted) AND
+		IdTipo IN
+		(SELECT IdElemento FROM [Pokemons.Tipos] WHERE IdPokemon = 
+			(SELECT IdPokemon FROM INSERTED)))
+BEGIN
+	PRINT ('Habilidad correcta.');
+END
+ELSE
+BEGIN
+	RAISERROR('Tipo habilidad inválido',16,1)
+END
+END
+
+-- OK
+EXEC spAsociarHabilidad 1,1
+
+-- NO
+EXEC spAsociarHabilidad 1,2
